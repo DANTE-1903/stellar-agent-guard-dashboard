@@ -93,12 +93,12 @@ export function PolicyForm() {
     URL.revokeObjectURL(url);
   }
 
-  async function submit() {
+  async function submit(exportOnly = false) {
     setBusy(true);
     setError(null);
     setOutcome(null);
     try {
-      const result = await installPolicy({ server, signer: signer(), guard, draft: effective });
+      const result = await installPolicy({ server, signer: signer(), guard, draft: effective, exportOnly });
       setOutcome(result);
       if (result.kind === "invoked" && result.result.kind === "refused") {
         pushEvents(refusedEventsFromDiagnostics(result.result.diagnosticEvents, guard));
@@ -108,7 +108,9 @@ export function PolicyForm() {
       if (result.kind === "invoked" && result.result.kind === "submitted") {
         notifyTabs("POLICY_UPDATED", { payload: { operation: "set_policy" } });
       }
-      await refresh();
+      if (!exportOnly) {
+        await refresh();
+      }
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : String(caught));
     } finally {
@@ -116,17 +118,19 @@ export function PolicyForm() {
     }
   }
 
-  async function revoke() {
+  async function revoke(exportOnly = false) {
     setBusy(true);
     setError(null);
     setOutcome(null);
     try {
-      const result = await revokePolicy({ server, signer: signer(), guard });
+      const result = await revokePolicy({ server, signer: signer(), guard, exportOnly });
       setOutcome({ kind: "invoked", result });
       if (result.kind === "submitted") {
         notifyTabs("POLICY_UPDATED", { payload: { operation: "revoke_policy" } });
       }
-      await refresh();
+      if (!exportOnly) {
+        await refresh();
+      }
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : String(caught));
     } finally {
@@ -419,6 +423,9 @@ export function PolicyForm() {
         <button disabled={!wallet || busy || issues.length > 0} onClick={() => void submit()}>
           {busy ? "Working…" : "Sign and install policy"}
         </button>
+        <button className="secondary" disabled={!wallet || busy || issues.length > 0} onClick={() => void submit(true)}>
+          Export XDR
+        </button>
         <button className="secondary" disabled={!wallet || busy} onClick={() => void revoke()}>
           Revoke policy (default deny)
         </button>
@@ -437,7 +444,7 @@ export function PolicyForm() {
 
       {error && <ErrorBlock title="The policy write did not complete" detail={error} />}
 
-      {outcome?.kind === "invoked" && <OutcomeBlock result={outcome.result} verb="set_policy" />}
+      {outcome?.kind === "invoked" && <OutcomeBlock result={outcome.result} verb="set_policy" onClose={() => setOutcome(null)} />}
       {outcome?.kind === "invalid" && (
         <ErrorBlock
           title="The policy was rejected before signing"
@@ -448,7 +455,43 @@ export function PolicyForm() {
   );
 }
 
-export function OutcomeBlock({ result, verb }: { result: InvokeResult; verb: string }) {
+export function OutcomeBlock({ result, verb, onClose }: { result: InvokeResult; verb: string; onClose?: () => void }) {
+  if (result.kind === "exported") {
+    return (
+      <div className="modal-backdrop" onClick={onClose}>
+        <div className="modal" onClick={(e) => e.stopPropagation()}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+            <h2 style={{ margin: 0 }}>Exported Transaction XDR</h2>
+            {onClose && <button className="secondary" onClick={onClose}>Close</button>}
+          </div>
+          <p className="tiny" style={{ marginBottom: "16px" }}>
+            This unsigned transaction envelope is ready for external multi-sig signing.
+          </p>
+          <textarea
+            readOnly
+            value={result.xdr}
+            style={{ width: "100%", height: "120px", marginBottom: "16px", fontSize: "12px", fontFamily: "monospace" }}
+          />
+          <div className="row">
+            <button onClick={() => navigator.clipboard.writeText(result.xdr)}>Copy to Clipboard</button>
+            <button
+              onClick={() => {
+                const blob = new Blob([result.xdr], { type: "text/plain" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `unsigned-${verb}-${Date.now()}.tx`;
+                a.click();
+                URL.revokeObjectURL(url);
+              }}
+            >
+              Download .tx
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
   if (result.kind === "submitted") {
     return (
       <div className="notice info">
