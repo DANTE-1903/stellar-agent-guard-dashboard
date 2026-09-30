@@ -69,6 +69,7 @@ import {
   type NetworkSwitchOutcome,
 } from "../lib/guard/networkSwitch.ts";
 import { isObserverSession, readSourceFor } from "../lib/guard/observerMode.ts";
+import { memoryWiper } from "../lib/guard/memoryWiper.ts";
 import type { WalletSigner } from "../lib/guard/submit.ts";
 import {
   useIdleTimer,

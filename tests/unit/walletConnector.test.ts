@@ -214,7 +214,7 @@ describe("xBull connector", () => {
   });
 
   it("says plainly when a provider cannot sign a Soroban auth entry", async () => {
-    const connector = createXbullConnector(createFakeXbull({ signAuthEntry: undefined }));
+    const connector = createXbullConnector(createFakeXbull({}));
     await assert.rejects(
       () => connector.signAuthEntry("AUTH"),
       (error: unknown) =>
@@ -367,7 +367,7 @@ describe("provider detection and selection", () => {
 
   it("reads the injected wallet objects off a window-like scope", () => {
     const xbull = createFakeXbull();
-    const scope = readWalletScope({ xbull, albedo: undefined }, null);
+    const scope = readWalletScope({ xbull }, null);
     assert.equal(scope.xbull, xbull);
     assert.equal(scope.albedo, null);
   });

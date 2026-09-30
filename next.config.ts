@@ -38,12 +38,6 @@ function nodeCryptoShimPlugin(shimPath: string): { apply(compiler: NodeCryptoShi
 }
 
 const config: NextConfig = {
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   reactStrictMode: true,
   // The dashboard holds no secrets and no server state: every mutation is signed
   // in the operator's own browser wallet and broadcast straight to Soroban RPC.
