@@ -138,6 +138,7 @@ jobs:
       - name: Download the report artifact
         id: artifact
         if: steps.wait.outputs.run-id != ''
+        continue-on-error: true
         uses: actions/download-artifact@v4
         with:
           name: bundle-size-report
@@ -159,7 +160,7 @@ jobs:
                 "## Bundle size report",
                 "",
                 "The bundle-size analysis run did not produce a report" +
-                  `${inputs.conclusion === "timeout" ? " (timed out waiting for it)" : ""}.`,
+                  `${process.env.conclusion === "timeout" ? " (timed out waiting for it)" : ""}.`,
                 "Check the `bundle-size` workflow logs on this pull request.",
               ].join("\n");
             }
