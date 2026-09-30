@@ -38,7 +38,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: "24"
           cache: npm
@@ -87,7 +87,7 @@ jobs:
 
       - name: Upload the report artifact
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: bundle-size-report
           path: |
@@ -137,9 +137,14 @@ jobs:
 
       - name: Download the report artifact
         id: artifact
-        if: steps.wait.outputs.run-id != ''
+        # Only a completed analysis run can have produced the report artifact;
+        # a failed or timed-out wait has nothing to download. The download itself
+        # is non-fatal: when the artifact is missing (for example the analysis
+        # produced no report files and the upload was skipped), the comment step
+        # still runs and posts the fallback message below.
+        if: steps.wait.outputs.run-id != '' && steps.wait.outputs.conclusion == 'success'
         continue-on-error: true
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: bundle-size-report
           github-token: ${{ secrets.GITHUB_TOKEN }}
