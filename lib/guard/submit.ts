@@ -561,10 +561,10 @@ async function runInvocation(request: InvokeRequest): Promise<InvokeResult> {
     operation: authorizedOperation,
     passphrase,
     guard: request.guardForFootprint ?? null,
-    feePreset: request.feePreset,
-    maxFeeCap: request.maxFeeCap,
-    minTimeOffset: request.minTimeOffset,
-    maxTimeOffset: request.maxTimeOffset,
+    ...(request.feePreset !== undefined && { feePreset: request.feePreset }),
+    ...(request.maxFeeCap !== undefined && { maxFeeCap: request.maxFeeCap }),
+    ...(request.minTimeOffset !== undefined && { minTimeOffset: request.minTimeOffset }),
+    ...(request.maxTimeOffset !== undefined && { maxTimeOffset: request.maxTimeOffset }),
   });
 
   if (request.exportOnly) {
